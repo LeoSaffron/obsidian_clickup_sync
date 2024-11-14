@@ -32,8 +32,8 @@ current_date_from = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')  #
 current_date_to = datetime.now().strftime('%Y-%m-%d')  # Default to today
 
 # Example: Manually set date range
-# current_date_from = '2024-10-22'  # Set a specific start date, e.g., October 22, 2024
-# current_date_to = '2024-10-23'  # Set a specific end date, e.g., October 23, 2024
+current_date_from = '2024-11-01'  # Set a specific start date, e.g., October 22, 2024
+# current_date_to = '2024-11-14'  # Set a specific end date, e.g., October 23, 2024
 
 # Example: Manually set due date
 # due_date_str = '2024-10-22'  # Set a specific due date, e.g., October 22, 2024
@@ -42,7 +42,7 @@ current_date_to = datetime.now().strftime('%Y-%m-%d')  # Default to today
 if not due_date_str:
     due_date_str = datetime.now().strftime('%Y-%m-%d')
 
-start_time_str = '15:00'  # Manually set start time in 'HH:MM' format if needed
+start_time_str = '12:00'  # Manually set start time in 'HH:MM' format if needed
 # Example: Manually set start time
 # start_time_str = '15:00'  # Set a specific start time, e.g., 3 PM (15:00)
 
@@ -53,6 +53,11 @@ if not start_time_str:
 task_duration_minutes = 30  # Default task duration (in minutes)
 task_duration = timedelta(minutes=task_duration_minutes)
 break_duration = timedelta(minutes=30)  # Break duration after every 2 tasks
+
+
+# Verbose options
+verbose = True
+verbose_level = 2  # Set to 1 for brief info, 2 for detailed
 
 # Fetch tasks with "TO DO" status from ClickUp
 def get_todo_tasks():
@@ -89,11 +94,15 @@ def assign_task_dates():
     tasks = get_todo_tasks()
     start_time = datetime.strptime(f'{due_date_str} {start_time_str}', '%Y-%m-%d %H:%M')
     task_counter = 0
+    
+    if verbose:
+        print(f"Found {len(tasks)} tasks to update.")
 
     for task in tasks:
         task_id = task['id']
         due_time = start_time + task_duration
-        update_task_dates(task_id, start_time, due_time)
+        task_name = task.get('name', 'Unnamed Task')  # Default if task name is missing
+        updated = update_task_dates(task_id, start_time, due_time)
         
         # Increment task counter and add break after every 2 tasks
         task_counter += 1
@@ -101,8 +110,26 @@ def assign_task_dates():
             start_time = due_time + break_duration
         else:
             start_time = due_time
+            
+        if verbose and updated:
+            if verbose_level == 1:
+                print(f"Updated task ID: {task_id}")
+            elif verbose_level == 2:
+                print(f"Updated task: {task_name} - Start: {start_time} - Due: {due_time}")
+            elif verbose_level == 3:
+                print(f"Updated task ID: {task_id}, Name: {task_name} - Start: {start_time} - Due: {due_time}")
 
-    print(f"Updated {len(tasks)} tasks.")
+    # Increment task counter and add break after every 2 tasks
+    task_counter += 1
+    if task_counter % 2 == 0:
+        start_time = due_time + break_duration
+    else:
+        start_time = due_time
+
+    if verbose:
+        print(f"Updated {len(tasks)} tasks.")
+    
+        print(f"Updated {len(tasks)} tasks.")
 
 # Execute the script
 assign_task_dates()
