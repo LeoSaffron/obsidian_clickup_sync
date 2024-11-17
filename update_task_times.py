@@ -8,10 +8,8 @@ Created on Sat Oct 26 12:14:04 2024
 import requests
 import json
 import os
+import argparse
 from datetime import datetime, timedelta
-
-
-
 
 # Define the folder where the config file is stored
 config_folder = 'config'
@@ -25,39 +23,35 @@ with open(config_file_path, 'r') as config_file:
 API_KEY = config['API_KEY']
 LIST_ID = config['LIST_ID']
 
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Update ClickUp tasks with new start and due dates.")
+parser.add_argument('--current_date_from', type=str, default=None, help="Start date for filtering tasks (YYYY-MM-DD).")
+parser.add_argument('--current_date_to', type=str, default=None, help="End date for filtering tasks (YYYY-MM-DD).")
+parser.add_argument('--due_date_str', type=str, default=None, help="Due date for tasks (YYYY-MM-DD).")
+parser.add_argument('--start_time_str', type=str, default=None, help="Start time for tasks (HH:MM).")
+parser.add_argument('--verbose', type=bool, default=True, help="Enable verbose output (True/False).")
+parser.add_argument('--verbose_level', type=int, default=2, help="Verbose level (1 for brief, 2 for detailed).")
+args = parser.parse_args()
 
-# Default values
-due_date_str = ''  # Manually set due date in 'YYYY-MM-DD' format if needed
-current_date_from = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')  # Default to yesterday
-current_date_to = datetime.now().strftime('%Y-%m-%d')  # Default to today
+# Default values from command-line or dynamically assigned
+current_date_from = args.current_date_from or (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+# current_date_from = '2024-11-14'  # Uncomment to set manually: specific start date, e.g., November 1, 2024
 
-# Example: Manually set date range
-current_date_from = '2024-11-01'  # Set a specific start date, e.g., October 22, 2024
-# current_date_to = '2024-11-14'  # Set a specific end date, e.g., October 23, 2024
+current_date_to = args.current_date_to or datetime.now().strftime('%Y-%m-%d')
+# current_date_to = '2024-11-14'  # Uncomment to set manually: specific end date, e.g., November 14, 2024
 
-# Example: Manually set due date
-# due_date_str = '2024-10-22'  # Set a specific due date, e.g., October 22, 2024
+due_date_str = args.due_date_str or datetime.now().strftime('%Y-%m-%d')
+# due_date_str = '2024-10-22'  # Uncomment to set manually: specific due date, e.g., October 22, 2024
 
-# If due_date_str is not set or is empty, default to today's date
-if not due_date_str:
-    due_date_str = datetime.now().strftime('%Y-%m-%d')
+start_time_str = args.start_time_str or '12:00'  # Default start time
+# start_time_str = '15:00'  # Uncomment to set manually: specific start time, e.g., 3 PM (15:00)
 
-start_time_str = '12:00'  # Manually set start time in 'HH:MM' format if needed
-# Example: Manually set start time
-# start_time_str = '15:00'  # Set a specific start time, e.g., 3 PM (15:00)
-
-# If start_time_str is not set or is empty, default to '18:00'
-if not start_time_str:
-    start_time_str = '18:00'
+verbose = args.verbose
+verbose_level = args.verbose_level
 
 task_duration_minutes = 30  # Default task duration (in minutes)
 task_duration = timedelta(minutes=task_duration_minutes)
 break_duration = timedelta(minutes=30)  # Break duration after every 2 tasks
-
-
-# Verbose options
-verbose = True
-verbose_level = 2  # Set to 1 for brief info, 2 for detailed
 
 # Fetch tasks with "TO DO" status from ClickUp
 def get_todo_tasks():
@@ -119,17 +113,9 @@ def assign_task_dates():
             elif verbose_level == 3:
                 print(f"Updated task ID: {task_id}, Name: {task_name} - Start: {start_time} - Due: {due_time}")
 
-    # Increment task counter and add break after every 2 tasks
-    task_counter += 1
-    if task_counter % 2 == 0:
-        start_time = due_time + break_duration
-    else:
-        start_time = due_time
-
     if verbose:
-        print(f"Updated {len(tasks)} tasks.")
-    
         print(f"Updated {len(tasks)} tasks.")
 
 # Execute the script
-assign_task_dates()
+if __name__ == "__main__":
+    assign_task_dates()
